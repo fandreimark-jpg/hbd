@@ -1,39 +1,55 @@
 // Run with: node src/photoLayout.check.js
-// Asserts photo spots stay on screen, clear of the text column and the gift.
+// Asserts photo spots stay on screen and clear of the greeting, gift, controls and each other.
 import assert from 'node:assert/strict'
-import { computeSpots, giftSize, placeIn } from './photoLayout.js'
+import { computeSpots, dancerHeight, giftSize, placeIn } from './photoLayout.js'
 
 const overlap = (a, b) => a.x < b.right && a.x + a.w > b.left && a.y < b.bottom && a.y + a.h > b.top
+const toRect = (s) => ({ left: s.x, right: s.x + s.w, top: s.y, bottom: s.y + s.h })
 
-// Rough stand-in for the CSS: text column width, stage band, gift at its floor.
+// Rough stand-in for the CSS: header, gift centre at 40% of the stage, toolbar in the corner.
 function page(W, H) {
-  const colW = W >= 1000 ? 560 : W >= 700 ? 440 : W - 32
   const box = giftSize(W, H)
   const giftW = box * 1.16
-  const stage = { top: 110, bottom: 110 + (W >= 700 ? Math.min(420, Math.max(250, H * 0.42)) : Math.min(460, Math.max(320, H * 0.48))) }
-  const gift = { left: (W - giftW) / 2, right: (W + giftW) / 2, bottom: stage.bottom - box * 0.12, top: stage.bottom - box * 0.12 - box * 1.36 }
-  const center = { left: (W - colW) / 2, right: (W + colW) / 2 }
-  return { W, top: 16, bottom: H - 70, center, stage, gift, lidClear: giftW * 0.25 }
+  const headerBottom = W < 600 ? 140 : H < 500 ? 50 : 140
+  const stageH = H - headerBottom
+  const base = headerBottom + stageH * 0.4 + box * 0.68
+  const gift = { left: (W - giftW) / 2, right: (W + giftW) / 2, bottom: base, top: base - box * 1.36 }
+  const half = Math.max(W < 600 ? W / 2 - 20 : 230, giftW * 0.9)
+  return {
+    W, H, top: 16, bottom: H - 16,
+    center: { left: W / 2 - half, right: W / 2 + half },
+    header: { top: 0, bottom: headerBottom, left: W / 2 - half, right: W / 2 + half },
+    controls: { left: W - 150, right: W - 10, top: 10, bottom: 54 },
+    gift,
+  }
 }
 
-const expected = { '320x568': 'single', '390x844': 'pair', '844x390': 'wide', '1440x900': 'wide', '820x1180': 'wide' }
-for (const [size, mode] of Object.entries(expected)) {
+// Same page with the dancer standing in the lower centre.
+function withDancer(p) {
+  const dh = dancerHeight(p.W, p.H, { desktop: 280, mobile: 220 })
+  const dw = dh * (9 / 16)
+  const reserve = { left: (p.W - dw) / 2, right: (p.W + dw) / 2, top: p.bottom + 16 - dh, bottom: p.bottom + 16 }
+  return { ...p, reserve }
+}
+
+const expect = { '320x568': [2, 'lower'], '390x844': [3, 'lower'], '844x390': [2, 'middle'], '1440x900': [6, 'lower'], '820x1180': [4, 'lower'] }
+for (const [size, [cap, mustHave]] of Object.entries(expect)) {
   const [W, H] = size.split('x').map(Number)
-  const p = page(W, H)
-  const s = computeSpots(p)
-  assert.equal(s.mode, mode, size)
-  assert.ok(s.capacity >= 1 && s.capacity <= s.spots.length)
-  assert.deepEqual([...new Set(s.spots.slice(0, 2).map((x) => x.side))].sort(), ['l', 'r'], `${size}: first two spots alternate sides`)
-  for (const spot of s.spots) {
-    const at = `${size} ${JSON.stringify(spot)}`
-    assert.ok(spot.x >= 0 && spot.x + spot.w <= W, `${at}: off-screen`)
-    if (mode === 'wide') assert.ok(spot.x + spot.w <= p.center.left || spot.x >= p.center.right, `${at}: crosses the text column`)
-    else for (const r of [spot, spot.alt].filter(Boolean)) assert.ok(!overlap(r, p.gift), `${at}: covers the gift`)
+  const p = withDancer(page(W, H))
+  const { spots, capacity } = computeSpots(p)
+  assert.equal(capacity, cap, `${size} capacity`)
+  assert.ok(spots.some((s) => s.row === mustHave), `${size}: has ${mustHave} spots`)
+  for (let i = 0; i < spots.length; i += 2) assert.deepEqual([spots[i].side, spots[i + 1].side], ['l', 'r'], `${size}: spots alternate sides`)
+  for (const [i, s] of spots.entries()) {
+    const at = `${size} ${s.row}-${s.side}`
+    assert.ok(s.x >= 0 && s.x + s.w <= W && s.y >= 0 && s.y + s.h <= H, `${at}: off-screen`)
+    for (const [name, r] of Object.entries({ gift: p.gift, controls: p.controls, dancer: p.reserve })) assert.ok(!overlap(s, r), `${at}: covers the ${name}`)
+    if (W >= 600) assert.ok(!overlap(s, p.header), `${at}: covers the greeting`)
+    else assert.ok(s.y >= p.header.bottom || !overlap(s, p.header), `${at}: covers the greeting`)
+    for (const o of spots.slice(i + 1)) assert.ok(!overlap(s, toRect(o)), `${at}: overlaps ${o.row}-${o.side}`)
     for (const ratio of [0.27, 0.6, 1.1]) {
-      const b = placeIn(spot, ratio, 800, 12)
-      const inside = (r) => b.x >= r.x - 1 && b.x + b.w <= r.x + r.w + 1 && b.y >= r.y && b.y + b.h <= r.y + r.h + 1
-      assert.ok(inside(spot) || (spot.alt && inside(spot.alt)), `${at}: photo ${ratio} spills out`)
-      if (mode !== 'wide') assert.ok(!overlap(b, p.gift), `${at}: photo ${ratio} covers the gift`)
+      const b = placeIn(s, ratio, 800, 12)
+      assert.ok(b.x >= s.x - 1 && b.x + b.w <= s.x + s.w + 1 && b.y - 12 >= s.y && b.y + b.h <= s.y + s.h + 1, `${at}: photo ${ratio} spills out (incl. bounce)`)
     }
   }
 }

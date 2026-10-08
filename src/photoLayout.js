@@ -7,85 +7,72 @@ export function giftSize(W, H) {
   return Math.round(clamp(Math.min(W * (W < 700 ? 0.3 : 0.17), H * 0.28), 96, 190))
 }
 
+// Dancer height for a viewport: the configured size, shrunk on short screens.
+export function dancerHeight(W, H, sizes) {
+  return Math.round(Math.min(W >= 700 ? sizes.desktop : sizes.mobile, H * 0.3))
+}
+
+// How many photos may be on screen at once.
+export function maxPhotos(W, H) {
+  if (H < 500) return 2 // short landscape: fewer, larger people
+  if (W >= 1000 && H >= 640) return 6
+  return W >= 700 ? 4 : 3
+}
+
 /**
- * Picks photo spots from measured page rects.
- *   wide:   balanced areas left and right of the text column (1–2 per side)
- *   pair:   one spot either side of the gift (phones)
- *   single: one spot above the gift, alternating left/right (very narrow)
- * Spots alternate sides in order, so filling them round-robin alternates sides.
+ * Builds photo destinations around the central greeting + gift from measured rects:
+ *   middle-left/right   beside the text column (wide) or beside the gift (phones)
+ *   lower-left/right    the band below the gift, anchored to the outer corners
+ *   upper-left/right    top of the side columns (wide screens with enough height)
+ * Spots come in left/right pairs so filling them in order alternates sides,
+ * and every spot is visited each time the sequence goes round.
  */
-export function computeSpots({ W, top, bottom, center, stage, gift, lidClear }) {
-  const m = 12
-  const gap = 14
-  const sideW = center.left - m - gap
+export function computeSpots({ W, H, top, bottom, center, header, controls, gift, reserve, edge = 16, spacing = 14 }) {
+  const minW = W < 600 ? 76 : 130
+  const minH = 150
+  const cap = maxPhotos(W, H)
+  const mirror = (r) => ({ ...r, x: W - r.x - r.w, side: 'r', align: r.align === 'l' ? 'r' : r.align })
+  const ok = (r) => r && r.w >= minW && r.h >= minH
 
-  if (sideW >= 150) {
-    const h = bottom - top
-    const mirror = (r) => ({ ...r, x: W - r.x - r.w, side: 'r' })
-    if (sideW >= 2 * 170) {
-      const outer = { x: m, y: top, w: sideW * 0.56, h, side: 'l', depth: 1 }
-      // back row: higher feet and smaller, so it reads as further away
-      const inner = { x: m + sideW * 0.44, y: top + h * 0.05, w: sideW * 0.56, h: h * 0.66, side: 'l', depth: 0.9 }
-      return { mode: 'wide', capacity: 4, spots: [outer, mirror(outer), inner, mirror(inner)] }
+  const lowerTop = gift.bottom + spacing
+  // `reserve`: the lower-centre area kept for the dancer; lower spots stop beside it.
+  const lowerRight = reserve ? reserve.left - spacing : W / 2 - spacing / 2
+  const lower = cap > 2 ? { x: edge, y: lowerTop, w: lowerRight - edge, h: bottom - lowerTop, side: 'l', align: 'l', row: 'lower' } : null
+
+  let middle = null
+  let upper = null
+  const sideW = center.left - edge - spacing
+  if (sideW >= minW) {
+    // Wide: columns beside the text column, below the corner controls, above the lower band.
+    const colTop = Math.max(top, controls.bottom + spacing)
+    const colBottom = ok(lower) ? lowerTop - spacing : bottom
+    const colH = colBottom - colTop
+    if (cap >= 4 && colH >= 2 * minH + spacing) {
+      const h = (colH - spacing) / 2
+      upper = { x: edge, y: colTop, w: sideW, h, side: 'l', align: 'c', row: 'upper' }
+      middle = { x: edge, y: colTop + h + spacing, w: sideW, h, side: 'l', align: 'c', row: 'middle' }
+    } else {
+      middle = { x: edge, y: colTop, w: sideW, h: colH, side: 'l', align: 'c', row: 'middle' }
     }
-    const one = { x: m, y: top, w: sideW, h, side: 'l', depth: 1 }
-    return { mode: 'wide', capacity: 2, spots: [one, mirror(one)] }
+  } else {
+    // Phones: the strip beside the gift, below the greeting.
+    const y = Math.max(header.bottom, controls.bottom) + spacing
+    middle = { x: edge, y, w: gift.left - spacing - edge, h: gift.bottom - y, side: 'l', align: 'c', row: 'middle' }
   }
 
-  const leftW = gift.left - gap - m
-  const rightW = W - m - (gift.right + gap)
-  const pairW = Math.min(leftW, rightW)
-  if (pairW >= 92) {
-    const y = stage.top + 4
-    const h = gift.bottom - y
-    // Wide photos fit better in the half above the gift than in the strip beside it.
-    const aboveW = W / 2 - m - gap / 2
-    const aboveH = gift.top - lidClear * 0.5 - y
-    const above = (x) => (aboveH >= 100 ? { x, y, w: aboveW, h: aboveH } : null)
-    return {
-      mode: 'pair',
-      capacity: 2,
-      spots: [
-        { x: m, y, w: pairW, h, side: 'l', depth: 1, alt: above(m) },
-        { x: W - m - pairW, y, w: pairW, h, side: 'r', depth: 1, alt: above(W - m - aboveW) },
-      ],
-    }
-  }
-
-  const y = stage.top + 4
-  const h = Math.max(120, gift.top - lidClear - y)
-  const w = (W - 2 * m) * 0.64
-  return {
-    mode: 'single',
-    capacity: 1,
-    spots: [
-      { x: m, y, w, h, side: 'l', depth: 1 },
-      { x: W - m - w, y, w, h, side: 'r', depth: 1 },
-    ],
-  }
+  const spots = [middle, lower, upper].filter(ok).flatMap((r) => [r, mirror(r)])
+  return { capacity: Math.min(cap, spots.length), spots }
 }
 
 // Fits one photo (width/height ratio, natural height) into a spot: whole subject
 // visible, standing on the spot's floor, room left above for the bounce.
-export function placeIn(spot, ratio, naturalH, bounce) {
-  if (spot.alt) {
-    const a = fit(spot, ratio, naturalH, bounce)
-    const b = fit({ ...spot.alt, depth: spot.depth }, ratio, naturalH, bounce)
-    return b.w * b.h > a.w * a.h ? b : a
-  }
-  return fit(spot, ratio, naturalH, bounce)
-}
-
-function fit(spot, ratio, naturalH, bounce) {
-  // Head-and-shoulders shots get less height than full-body ones so faces stay life-sized.
-  const cap = spot.h * (ratio > 0.6 ? 0.62 : 1)
-  const maxH = Math.min(spot.h - bounce - 4, cap, spot.w / ratio, naturalH * 1.6) * spot.depth
+export function placeIn(spot, ratio, naturalH, bounce, scale = 1) {
+  // Head-and-shoulders shots stay life-sized in very tall spots.
+  const cap = spot.h > 360 && ratio > 0.6 ? spot.h * 0.62 : spot.h
+  const maxH = Math.min(spot.h - bounce - 4, cap * scale, spot.w / ratio, naturalH * 1.6)
   const h = Math.max(40, Math.floor(maxH))
   const w = Math.round(h * ratio)
-  return {
-    x: Math.round(spot.x + (spot.w - w) / 2),
-    y: Math.round(spot.y + spot.h - h),
-    w,
-    h,
-  }
+  const free = spot.w - w
+  const x = spot.align === 'l' ? spot.x : spot.align === 'r' ? spot.x + free : spot.x + free / 2
+  return { x: Math.round(x), y: Math.round(spot.y + spot.h - h), w, h }
 }

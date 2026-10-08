@@ -26,6 +26,16 @@ export const surprise = {
 
   photos: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(photo),
 
+  // Dancing person shown below the gift after it opens. Silent; the birthday music keeps playing.
+  // `sources` must have a transparent background (see README for how dance-alpha.webm was made).
+  dancer: {
+    enabled: true,
+    sources: [{ src: 'videos/processed/dance-alpha.webm', type: 'video/webm; codecs="vp9"' }],
+    still: 'videos/processed/dance-still.webp', // transparent still for reduced motion and browsers without transparent video
+    heightPx: { desktop: 280, mobile: 220 }, // largest size; shrinks on short screens
+    revealDelayMs: 1100, // after the tap, when the dancer appears (lid is open by then)
+  },
+
   timing: {
     photoHoldMs: 7000, // how long each photo stays on screen
     releaseDelayMs: 1300, // wait for the lid to open before the first photo
@@ -36,6 +46,12 @@ export const surprise = {
   bounce: {
     heightPx: 12, // gentle in-place bounce once a photo has landed (about 8–16)
     seconds: 2.8, // one up-and-down cycle
+  },
+
+  layout: {
+    edgePx: 16, // space between photos and the screen edges
+    spacingPx: 14, // space between photos, the greeting, the gift and the controls
+    photoScale: 1, // 0.6–1: shrink people below the largest size that fits their spot
   },
 
   // Balloons and sparkles behind everything: 0 = none, 0.5 = fewer and fainter, 1 = full.

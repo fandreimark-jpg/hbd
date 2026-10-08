@@ -18,7 +18,11 @@ If you are developing a production application, we recommend using TypeScript wi
 ## Birthday surprise
 
 - Run: `npm install` once, then `npm run dev` and open the printed URL.
-- Edit name, message, colors, timing, bounce, decorations, photos and music in `src/surpriseConfig.js`.
+- Edit name, optional message, colors, timing, bounce, photo spacing/size (`layout`), decorations, photos and music in `src/surpriseConfig.js`.
+- After opening, the top-right corner has Play/Mute music, Pause/Resume photos and a More menu with Replay surprise.
 - Photos: put the original in `public/photos/` and, if you have one, a transparent PNG of just the person in `public/photos/cutouts/` with the same name. Each entry in the config's `photos` list has `src` (original, used in the large viewer), `cutout` (transparent version; `''` shows the original in a soft frame instead), `alt` and `caption`. List order is display order.
 - Music: put an audio file (`.mp3`, `.m4a`) or a video with sound (`.mp4`) in `public/music/` and set `music: 'music/<file name>'`.
 - Layout self-check: `node src/photoLayout.check.js`.
+- Dancer: after the gift opens, a background-free dancer plays silently below it (settings: `dancer` in the config; set `enabled: false` to hide it). It uses `public/videos/processed/dance-alpha.webm` (VP9 with transparency, no sound); the original `public/videos/dance.mp4` is untouched. Safari and reduced-motion visitors see the transparent still `dance-still.webp` instead.
+- Replace the dance clip: put the new clip at `public/videos/dance.mp4` and run `python tools/matte_dance.py <rvm_mobilenetv3_fp32.onnx>` (setup steps are at the top of that file). It runs locally and rewrites the files in `public/videos/processed/`; check `tools/dance-review.png` before using the result.
+

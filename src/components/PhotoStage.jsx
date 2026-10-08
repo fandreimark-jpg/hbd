@@ -10,7 +10,7 @@ let nextKey = 1
  * resuming finishes exactly that wait, so nothing jumps or double-releases.
  * The parent remounts this component (new key) on replay.
  */
-export default function PhotoStage({ photos, scene, active, paused, timing, bounce, onView, onEmpty }) {
+export default function PhotoStage({ photos, scene, active, paused, timing, bounce, photoScale = 1, onView, onEmpty }) {
   const { spots, capacity, mouth } = scene // ceiling: page y the flight must stay below
   const [items, setItems] = useState([]) // { key, index, spot, src, cutout, ratio, height, leaving }
   const seq = useRef({ photo: 0, count: 0, visible: [], stage: 'wait', remaining: null, pending: null })
@@ -18,6 +18,17 @@ export default function PhotoStage({ photos, scene, active, paused, timing, boun
   useEffect(() => {
     live.current = { spots, capacity, onEmpty }
   })
+
+  // Resize/rotation changed the set of spots: move the people already on screen
+  // to the first free spots so none overlap; the next photo continues after them.
+  const spotCount = spots.length
+  useEffect(() => {
+    const n = seq.current
+    if (!n.visible.length) return
+    const order = new Map(n.visible.map((v, i) => [v.key, i]))
+    n.count = n.visible.length
+    setItems((list) => list.filter((it) => order.has(it.key)).map((it) => ({ ...it, spot: order.get(it.key) % spotCount })))
+  }, [spotCount])
 
   useEffect(() => {
     if (!active || paused || !capacity) return
@@ -120,18 +131,18 @@ export default function PhotoStage({ photos, scene, active, paused, timing, boun
     >
       {items.map((it) => {
         const spot = spots[it.spot % spots.length]
-        const box = placeIn(spot, it.ratio, it.height, bounce.heightPx)
+        const box = placeIn(spot, it.ratio, it.height, bounce.heightPx, photoScale)
         const label = photos[it.index].alt || `photo ${it.index + 1}`
         return (
           <div
             key={it.key}
             className={`cutout${it.cutout ? '' : ' cutout--framed'}${it.leaving ? ' is-leaving' : ''}`}
+            data-spot={`${spot.row}-${spot.side}`}
             style={{
               left: box.x,
               top: box.y,
               width: box.w,
               height: box.h,
-              zIndex: spot.depth < 1 ? 1 : 2,
               '--fx': `${Math.round(mouth.x - (box.x + box.w / 2))}px`,
               '--fy': `${Math.round(mouth.y - (box.y + box.h / 2))}px`,
               '--tilt': `${spot.side === 'l' ? -1.5 : 1.5}deg`,

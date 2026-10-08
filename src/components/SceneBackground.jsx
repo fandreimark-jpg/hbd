@@ -5,22 +5,19 @@ import { useEffect, useRef } from 'react'
 // it writes CSS variables directly (no React state per frame).
 
 const BALLOONS = [
-  // x/y in % of the viewport, size in px at depth 1; kept near the edges, away from the text
-  { x: 3, y: 30, size: 60, depth: 'far', color: 'gold', drift: 11 },
-  { x: 89, y: 12, size: 66, depth: 'far', color: 'rose', drift: 13 },
-  { x: -3, y: 13, size: 92, depth: 'mid', color: 'rose', drift: 9 },
-  { x: 86, y: 36, size: 80, depth: 'mid', color: 'blush', drift: 12 },
-  { x: 94, y: -6, size: 116, depth: 'near', color: 'gold', drift: 10 },
+  // x/y in % of the viewport, size in px. Placed around the gift, in the open space
+  // between the greeting and the photo spots, so faces and text stay on a quiet background.
+  { x: 31, y: 28, size: 58, depth: 'far', color: 'gold', drift: 11 },
+  { x: 63, y: 21, size: 64, depth: 'mid', color: 'rose', drift: 13 },
+  { x: 67, y: 50, size: 52, depth: 'far', color: 'blush', drift: 9, wideOnly: true }, // phones put a photo here
 ]
 
 const SPARKLES = [
-  { x: 24, y: 22, size: 14, depth: 'far', t: 4.2 },
-  { x: 71, y: 14, size: 18, depth: 'mid', t: 5.1 },
-  { x: 36, y: 8, size: 10, depth: 'far', t: 3.6 },
-  { x: 62, y: 40, size: 12, depth: 'far', t: 4.8 },
-  { x: 8, y: 52, size: 16, depth: 'mid', t: 5.6 },
-  { x: 92, y: 58, size: 14, depth: 'near', t: 4.4 },
-  { x: 50, y: 4, size: 12, depth: 'mid', t: 6 },
+  { x: 24, y: 22, size: 12, depth: 'far', t: 4.2 },
+  { x: 71, y: 14, size: 16, depth: 'mid', t: 5.1 },
+  { x: 38, y: 58, size: 10, depth: 'far', t: 3.6 },
+  { x: 60, y: 66, size: 12, depth: 'mid', t: 4.8 },
+  { x: 50, y: 4, size: 10, depth: 'near', t: 6 },
 ]
 
 function Balloon({ size, color, id }) {
@@ -78,7 +75,7 @@ export default function SceneBackground({ intensity }) {
   }, [])
 
   const level = Math.max(0, Math.min(1, intensity ?? 1))
-  const balloons = level === 0 ? [] : level < 1 ? BALLOONS.filter((b) => b.depth !== 'near').slice(0, 3) : BALLOONS
+  const balloons = level === 0 ? [] : level < 1 ? BALLOONS.slice(0, 2) : BALLOONS
   const sparkles = SPARKLES.slice(0, Math.round(SPARKLES.length * level))
 
   return (
@@ -92,7 +89,7 @@ export default function SceneBackground({ intensity }) {
             .map((b, i) => (
               <div
                 key={`b${i}`}
-                className="balloon"
+                className={`balloon${b.wideOnly ? ' balloon--wide' : ''}`}
                 style={{ left: `${b.x}%`, top: `${b.y}%`, '--drift': `${b.drift}s` }}
               >
                 <Balloon size={b.size} color={b.color} id={`balloon-${depth}-${i}`} />
