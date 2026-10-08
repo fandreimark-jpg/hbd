@@ -1,0 +1,854 @@
+/* Theme colors come from surpriseConfig.js via inline custom properties on .app */
+
+.app {
+  --ease-pop: cubic-bezier(0.2, 0.9, 0.3, 1.25);
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+  padding: 0 max(16px, env(safe-area-inset-right)) calc(var(--controls-h, 0px) + 20px) max(16px, env(safe-area-inset-left));
+  color: var(--ink);
+  background: var(--cream);
+  overflow-x: clip;
+}
+
+/* ---------- Background scene (decorative, behind everything) ---------- */
+
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.scene__light {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 34% 30% at 50% 56%, color-mix(in srgb, #fff 80%, var(--cream)), transparent 72%),
+    radial-gradient(ellipse 70% 42% at 50% -6%, color-mix(in srgb, var(--gold) 22%, transparent), transparent 70%),
+    radial-gradient(circle at -4% 96%, color-mix(in srgb, var(--blush) 90%, transparent), transparent 42%),
+    radial-gradient(circle at 104% 84%, color-mix(in srgb, var(--blush) 80%, transparent), transparent 38%),
+    linear-gradient(180deg, var(--cream) 0%, color-mix(in srgb, var(--cream) 82%, var(--blush)) 100%);
+}
+
+/* soft vignette that breathes very slowly */
+.scene__light::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 70% at 50% 50%, transparent 55%, color-mix(in srgb, var(--rose) 22%, transparent));
+  animation: breathe 16s ease-in-out infinite alternate;
+}
+
+.scene__floor {
+  position: absolute;
+  left: -15%;
+  right: -15%;
+  bottom: -30%;
+  height: 62%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse 50% 40% at 50% 30%, color-mix(in srgb, var(--blush) 45%, transparent), transparent 75%);
+}
+
+.scene__layer {
+  position: absolute;
+  inset: 0;
+  opacity: var(--deco, 1);
+  transform: translate3d(calc(var(--px, 0) * var(--depth) * -1px), calc(var(--py, 0) * var(--depth) * -1px), 0);
+  transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.scene__layer--far {
+  --depth: 10;
+  filter: saturate(0.8);
+  opacity: calc(var(--deco, 1) * 0.55);
+}
+
+.scene__layer--mid {
+  --depth: 22;
+  opacity: calc(var(--deco, 1) * 0.8);
+}
+
+.scene__layer--near {
+  --depth: 40;
+  filter: blur(1.2px);
+  opacity: calc(var(--deco, 1) * 0.9);
+}
+
+.balloon,
+.sparkle {
+  position: absolute;
+}
+
+@media (max-width: 699px) {
+  .balloon {
+    scale: 0.7;
+    transform-origin: 0 0;
+  }
+}
+
+.balloon svg {
+  display: block;
+  animation: drift var(--drift, 11s) ease-in-out infinite alternate;
+  transform-origin: 50% 0;
+}
+
+.sparkle svg {
+  display: block;
+  animation: twinkle var(--t, 4s) ease-in-out infinite;
+}
+
+@keyframes drift {
+  from { transform: translateY(0) rotate(-2deg); }
+  to { transform: translateY(-16px) rotate(2deg); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.75); }
+  50% { opacity: 0.95; transform: scale(1.05); }
+}
+
+@keyframes breathe {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}
+
+/* ---------- Center column: greeting, gift, message ---------- */
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
+}
+
+@media (min-width: 700px) {
+  .center {
+    max-width: 440px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .center {
+    max-width: 560px;
+  }
+}
+
+.intro {
+  padding-top: max(26px, calc(env(safe-area-inset-top) + 14px));
+}
+
+.intro h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.75rem, 5.6vw, 3.1rem);
+  line-height: 1.14;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+
+@media (max-height: 500px) {
+  .intro {
+    padding-top: 14px;
+  }
+  .intro h1 {
+    font-size: 1.9rem;
+  }
+}
+
+.intro h1:focus {
+  outline: none;
+}
+
+.is-open .intro h1 {
+  animation: greet 0.7s 0.55s var(--ease-pop) both;
+}
+
+.intro__hint {
+  margin: 10px 0 0;
+  font-size: 1.05rem;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: clamp(320px, 48svh, 460px);
+}
+
+@media (min-width: 700px) {
+  .stage {
+    height: clamp(250px, 42svh, 420px);
+  }
+}
+
+.app[data-mode='single'] .stage {
+  height: calc(var(--box) * 1.45 + 230px);
+}
+
+/* elliptical platform the gift stands on */
+.stage__floor {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: calc(var(--box) * 2.7);
+  height: calc(var(--box) * 0.62);
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse 50% 50% at 50% 42%, color-mix(in srgb, #fff 70%, var(--cream)) 0%, color-mix(in srgb, var(--blush) 55%, var(--cream)) 58%, transparent 72%);
+  box-shadow: inset 0 -6px 14px -10px color-mix(in srgb, var(--rose) 60%, transparent);
+  z-index: 0;
+}
+
+.message {
+  max-width: 38ch;
+  margin-top: 14px;
+  animation: greet 0.8s 1.1s ease-out both;
+}
+
+@media (min-width: 700px) {
+  .message {
+    max-width: none;
+  }
+}
+
+.message p {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.62;
+  text-wrap: pretty;
+}
+
+.message .empty-note {
+  margin-top: 12px;
+  font-size: 0.95rem;
+  font-style: italic;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+}
+
+/* ---------- Gift box (3D-style: oblique faces via clip-path) ---------- */
+
+.gift {
+  --b: var(--box, 160px);
+  --dx: calc(var(--b) * 0.16);
+  --dy: calc(var(--b) * 0.1);
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--b) * 0.12);
+  width: calc(var(--b) + var(--dx));
+  height: calc(var(--b) * 1.36);
+  margin-left: calc((var(--b) + var(--dx)) / -2);
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gift:disabled {
+  cursor: default;
+}
+
+.gift:focus-visible {
+  outline: 3px dashed var(--gold-deep);
+  outline-offset: 10px;
+}
+
+/* contact shadow */
+.gift::after {
+  content: '';
+  position: absolute;
+  left: -8%;
+  width: 118%;
+  bottom: calc(var(--b) * -0.07);
+  height: calc(var(--b) * 0.2);
+  border-radius: 50%;
+  background: radial-gradient(ellipse 50% 50%, color-mix(in srgb, var(--ink) 38%, transparent), transparent 70%);
+  z-index: 0;
+}
+
+.gift__part {
+  --ox: 50%;
+  --oy: 0px;
+  position: absolute;
+  transform-origin: var(--ox) calc(100% + var(--oy));
+  animation: idle 3.2s ease-in-out infinite;
+}
+
+/* the opening, seen from slightly above */
+.gift__back {
+  --ox: calc((var(--b) + var(--dx)) / 2);
+  --oy: calc(var(--b) * 0.72);
+  z-index: 1;
+  left: 0;
+  bottom: calc(var(--b) * 0.72);
+  width: calc(var(--b) + var(--dx));
+  height: var(--dy);
+  clip-path: polygon(0 100%, var(--dx) 0, 100% 0, var(--b) 100%);
+  background:
+    radial-gradient(ellipse 45% 120% at 50% 100%, color-mix(in srgb, var(--gold) 70%, #fff), transparent 75%),
+    linear-gradient(color-mix(in srgb, var(--rose) 45%, var(--ink)), color-mix(in srgb, var(--rose) 70%, var(--ink)));
+}
+
+.gift__body {
+  --ox: calc((var(--b) + var(--dx)) / 2);
+  z-index: 4;
+  left: 0;
+  bottom: 0;
+  width: var(--b);
+  height: calc(var(--b) * 0.72);
+  border-radius: 2px 0 6px 8px;
+  background:
+    linear-gradient(105deg, color-mix(in srgb, #fff 45%, transparent) 0%, transparent 38%),
+    linear-gradient(170deg, color-mix(in srgb, var(--blush) 80%, #fff), var(--rose));
+  box-shadow:
+    inset 0 2px 0 color-mix(in srgb, #fff 55%, transparent),
+    inset 0 -14px 20px -12px color-mix(in srgb, var(--ink) 35%, transparent);
+}
+
+.gift__side {
+  --ox: calc((var(--b) + var(--dx)) / 2 - var(--b));
+  z-index: 4;
+  left: var(--b);
+  bottom: 0;
+  width: var(--dx);
+  height: calc(var(--b) * 0.72 + var(--dy));
+  clip-path: polygon(0 var(--dy), 100% 0, 100% calc(100% - var(--dy)), 0 100%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--rose) 78%, var(--ink)), color-mix(in srgb, var(--rose) 62%, var(--ink)));
+}
+
+.gift__ribbon {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 16%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold) 30%, color-mix(in srgb, var(--gold) 55%, #fff) 50%, var(--gold) 70%, var(--gold-deep));
+}
+
+.gift__side .gift__ribbon,
+.lid__side .gift__ribbon {
+  width: 52%;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--gold-deep) 85%, var(--ink)), var(--gold-deep));
+}
+
+.gift__lid {
+  --ox: calc((var(--b) + var(--dx)) / 2 + var(--b) * 0.04);
+  --oy: calc(var(--b) * 0.72);
+  z-index: 2;
+  left: calc(var(--b) * -0.04);
+  bottom: calc(var(--b) * 0.72);
+  width: calc(var(--b) * 1.08 + var(--dx));
+  height: calc(var(--b) * 0.2 + var(--dy));
+}
+
+.gift__lid-inner {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.25s ease;
+}
+
+.lid__front {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: calc(var(--b) * 1.08);
+  height: calc(var(--b) * 0.2);
+  border-radius: 0 0 3px 4px;
+  background:
+    linear-gradient(105deg, color-mix(in srgb, #fff 50%, transparent), transparent 40%),
+    linear-gradient(175deg, color-mix(in srgb, var(--blush) 75%, #fff), color-mix(in srgb, var(--rose) 85%, var(--blush)));
+  box-shadow: 0 7px 10px -5px color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
+.lid__front .gift__ribbon {
+  width: 14.8%;
+}
+
+.lid__top {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: var(--dy);
+  clip-path: polygon(0 100%, var(--dx) 0, 100% 0, calc(100% - var(--dx)) 100%);
+  background: linear-gradient(100deg, color-mix(in srgb, #fff 70%, var(--blush)), color-mix(in srgb, var(--blush) 80%, #fff));
+}
+
+.lid__band {
+  position: absolute;
+  background: linear-gradient(90deg, var(--gold-deep), color-mix(in srgb, var(--gold) 60%, #fff), var(--gold-deep));
+}
+
+/* front-to-back band, leaning with the oblique depth (tan 58° ≈ dx/dy) */
+.lid__band--depth {
+  top: 0;
+  bottom: 0;
+  left: calc(var(--b) * 0.54 + var(--dx) / 2 - var(--b) * 0.08);
+  width: calc(var(--b) * 0.16);
+  transform: skewX(-58deg);
+}
+
+.lid__band--across {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: calc(var(--dy) * 0.45);
+  transform: translateY(-50%);
+  background: linear-gradient(180deg, var(--gold), var(--gold-deep));
+}
+
+.lid__side {
+  position: absolute;
+  left: calc(var(--b) * 1.08);
+  bottom: 0;
+  width: var(--dx);
+  height: calc(var(--b) * 0.2 + var(--dy));
+  clip-path: polygon(0 var(--dy), 100% 0, 100% calc(100% - var(--dy)), 0 100%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--rose) 75%, var(--ink)), color-mix(in srgb, var(--rose) 60%, var(--ink)));
+}
+
+.gift:not(:disabled):hover .gift__lid-inner {
+  transform: translateY(-4px) rotate(-1.5deg);
+}
+
+.gift__bow {
+  position: absolute;
+  left: calc(var(--b) * 0.54 + var(--dx) / 2);
+  bottom: calc(var(--b) * 0.2 + var(--dy) * 0.35);
+  width: calc(var(--b) * 0.6);
+  height: calc(var(--b) * 0.28);
+  transform: translateX(-50%);
+}
+
+.gift__loop {
+  position: absolute;
+  bottom: 8%;
+  width: 46%;
+  height: 76%;
+  border-radius: 55% 45% 40% 60% / 60% 60% 40% 40%;
+  background: radial-gradient(ellipse at 40% 35%, color-mix(in srgb, var(--gold) 55%, #fff), var(--gold) 55%, var(--gold-deep));
+  box-shadow: inset 0 -3px 6px color-mix(in srgb, var(--gold-deep) 70%, transparent);
+}
+
+.gift__loop::after {
+  content: '';
+  position: absolute;
+  inset: 26% 28% 30% 30%;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--gold-deep) 80%, var(--ink));
+  opacity: 0.55;
+}
+
+.gift__loop--l {
+  left: 5%;
+  transform: rotate(-16deg);
+  transform-origin: 100% 100%;
+}
+
+.gift__loop--r {
+  right: 5%;
+  border-radius: 45% 55% 60% 40% / 60% 60% 40% 40%;
+  transform: rotate(16deg);
+  transform-origin: 0 100%;
+}
+
+.gift__loop--r::after {
+  inset: 26% 30% 30% 28%;
+}
+
+.gift__knot {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  width: 20%;
+  height: 46%;
+  transform: translateX(-50%);
+  border-radius: 35%;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold) 45%, var(--gold-deep));
+}
+
+.gift__tail {
+  position: absolute;
+  top: 82%;
+  width: 13%;
+  height: 70%;
+  background: linear-gradient(var(--gold), var(--gold-deep));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+}
+
+.gift__tail--l {
+  left: 36%;
+  transform: rotate(24deg);
+  transform-origin: 50% 0;
+}
+
+.gift__tail--r {
+  right: 36%;
+  transform: rotate(-24deg);
+  transform-origin: 50% 0;
+}
+
+/* Opening: wiggle every part together, then lift the lid off. */
+.gift.is-open .gift__part {
+  animation: wiggle 0.45s ease-in-out;
+}
+
+.gift.is-open .gift__lid-inner {
+  animation: lid-open 0.85s 0.42s var(--ease-pop) both;
+}
+
+@keyframes idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-4deg); }
+  45% { transform: rotate(3.5deg); }
+  70% { transform: rotate(-2deg); }
+  85% { transform: rotate(1deg); }
+}
+
+@keyframes lid-open {
+  0% { transform: none; }
+  45% { transform: translate(calc(var(--b) * -0.04), calc(var(--b) * -0.5)) rotate(-12deg); }
+  100% { transform: translate(calc(var(--b) * -0.1), calc(var(--b) * -0.36)) rotate(-9deg); }
+}
+
+@keyframes greet {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- Confetti (short opening burst only) ---------- */
+
+.confetti {
+  position: absolute;
+  z-index: 5;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.confetti span {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confetti 1.5s 0.5s cubic-bezier(0.15, 0.6, 0.4, 1) both;
+}
+
+.confetti span.is-round {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+@keyframes confetti {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(0.6); }
+  45% { opacity: 1; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1); }
+  100% { opacity: 0; transform: translate(calc(var(--dx) * 1.2), calc(var(--dy) + 160px)) rotate(calc(var(--rot) * 2)) scale(0.9); }
+}
+
+/* ---------- Photos: cutouts that fly out of the gift and bounce in place ---------- */
+
+/* Sits between the gift opening (z 1–2) and the box front (z 4). */
+.photos {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.cutout {
+  position: absolute;
+}
+
+.cutout.is-leaving {
+  animation: fade-out 0.6s ease-in both;
+  pointer-events: none;
+}
+
+.cutout__fly,
+.cutout__bob {
+  width: 100%;
+  height: 100%;
+}
+
+.cutout__fly {
+  animation: fly-x 1.6s linear both;
+}
+
+.cutout__bob {
+  transform-origin: 50% 100%;
+  animation:
+    fly-y 1.6s linear both,
+    bob var(--bs, 2.8s) calc(1.6s + var(--phase, 0s)) ease-in-out infinite;
+}
+
+.photos.is-paused .cutout,
+.photos.is-paused .cutout *,
+.is-hidden .cutout,
+.is-hidden .cutout * {
+  animation-play-state: paused;
+}
+
+/* Small while crossing the center at mouth height, full size only once at the side. */
+@keyframes fly-x {
+  0% { opacity: 0; transform: translateX(var(--fx)) scale(0.08); }
+  10% { opacity: 1; }
+  30% { transform: translateX(var(--fx)) scale(0.28); animation-timing-function: cubic-bezier(0.35, 0, 0.4, 1); }
+  60% { transform: translateX(0) scale(0.32); animation-timing-function: cubic-bezier(0.2, 0.8, 0.4, 1); }
+  85% { transform: translateX(0) scale(1.02); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* Up out of the box, across, then up or down onto the spot with one bounce. */
+@keyframes fly-y {
+  0% { transform: translateY(var(--fy)); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
+  30% { transform: translateY(calc(var(--fy) - var(--rise))); }
+  60% { transform: translateY(calc(var(--fy) - var(--rise))); animation-timing-function: cubic-bezier(0.3, 0.6, 0.4, 1); }
+  85% { transform: translateY(0); animation-timing-function: ease-out; }
+  93% { transform: translateY(calc(var(--bh) * -0.8)); animation-timing-function: ease-in; }
+  100% { transform: translateY(0); }
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(calc(var(--bh) * -1)) rotate(var(--tilt, 0deg)); }
+}
+
+.cutout__btn {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cutout__btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 14px 10px color-mix(in srgb, var(--ink) 24%, transparent))
+    drop-shadow(0 2px 2px color-mix(in srgb, var(--ink) 18%, transparent));
+}
+
+/* Focus follows the person's silhouette instead of drawing a box. */
+.cutout__btn:focus-visible {
+  outline: none;
+}
+
+.cutout__btn:focus-visible img {
+  filter:
+    drop-shadow(3px 0 0 var(--gold-deep))
+    drop-shadow(-3px 0 0 var(--gold-deep))
+    drop-shadow(0 3px 0 var(--gold-deep))
+    drop-shadow(0 -3px 0 var(--gold-deep))
+    drop-shadow(0 14px 10px color-mix(in srgb, var(--ink) 24%, transparent));
+}
+
+/* Fallback for photos without a transparent cutout: a soft framed print. */
+.cutout--framed .cutout__btn img {
+  border: 5px solid #fffdf9;
+  border-radius: 6px;
+  background: #fffdf9;
+  filter: drop-shadow(0 12px 12px color-mix(in srgb, var(--ink) 25%, transparent));
+}
+
+.cutout--framed .cutout__btn:focus-visible img {
+  outline: 3px solid var(--gold-deep);
+  outline-offset: 3px;
+}
+
+/* ---------- Controls (fixed; .app reserves their measured height) ---------- */
+
+.controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: linear-gradient(color-mix(in srgb, var(--cream) 0%, transparent), color-mix(in srgb, var(--cream) 94%, transparent) 34%);
+  animation: greet 0.6s 1.4s ease-out both;
+}
+
+.control {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 15px;
+  border: 1px solid color-mix(in srgb, var(--gold-deep) 50%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, #fff 80%, var(--cream));
+  box-shadow: 0 4px 10px -6px color-mix(in srgb, var(--ink) 35%, transparent);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.control:hover {
+  background: color-mix(in srgb, var(--blush) 55%, #fff);
+}
+
+.control:focus-visible {
+  outline: 3px solid var(--gold-deep);
+  outline-offset: 2px;
+}
+
+.control--accent {
+  background: var(--blush);
+  border-color: var(--rose);
+}
+
+.control svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.music-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 6px;
+  font-size: 0.9rem;
+  color: color-mix(in srgb, var(--ink) 80%, transparent);
+}
+
+/* The music element is only a sound source; its picture is never shown. */
+.music-media {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Photo viewer ---------- */
+
+.viewer {
+  max-width: min(92vw, 720px);
+  max-height: 92dvh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.viewer::backdrop {
+  background: color-mix(in srgb, var(--ink, #4a2c38) 62%, transparent);
+  backdrop-filter: blur(3px);
+}
+
+.viewer__frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 12px 14px;
+  border-radius: 4px;
+  background: #fffdf9;
+  box-shadow: 0 24px 60px -20px rgb(0 0 0 / 0.5);
+  animation: greet 0.3s ease-out;
+}
+
+.viewer__frame img {
+  max-width: 100%;
+  max-height: calc(92dvh - 110px);
+  object-fit: contain;
+}
+
+.viewer__frame figcaption {
+  font-size: 1rem;
+}
+
+.viewer__close {
+  min-height: 44px;
+  padding: 0 22px;
+  border: 1px solid color-mix(in srgb, var(--gold-deep) 45%, transparent);
+  border-radius: 999px;
+  background: var(--blush);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.viewer__close:focus-visible {
+  outline: 3px solid var(--gold-deep);
+  outline-offset: 2px;
+}
+
+/* ---------- Hidden tab: stop decorative work ---------- */
+
+.is-hidden .scene *,
+.is-hidden .gift__part {
+  animation-play-state: paused;
+}
+
+/* ---------- Gentle mode ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .gift__part,
+  .gift.is-open .gift__part,
+  .balloon svg,
+  .sparkle svg,
+  .scene__light::after,
+  .cutout__fly,
+  .cutout__bob {
+    animation: none;
+  }
+  .scene__layer {
+    transform: none;
+    transition: none;
+  }
+  .gift.is-open .gift__lid-inner {
+    animation: fade-out 0.8s both;
+  }
+  .gift:not(:disabled):hover .gift__lid-inner {
+    transform: none;
+  }
+  .cutout {
+    animation: fade-in 0.9s ease both;
+  }
+  .cutout.is-leaving {
+    animation: fade-out 0.6s ease both;
+  }
+  .is-open .intro h1,
+  .message,
+  .controls,
+  .viewer__frame {
+    animation: fade-in 0.6s ease both;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes fade-out {
+  to { opacity: 0; }
+}

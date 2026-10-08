@@ -1,0 +1,30 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --serif: 'Young Serif', Georgia, 'Times New Roman', serif;
+  --sans: 'Nunito Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light;
+  font: 17px/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  overflow-x: clip;
+  background: #fbf4ec;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+img {
+  display: block;
+}
